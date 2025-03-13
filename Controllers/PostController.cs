@@ -23,6 +23,11 @@ namespace BloggingPlatform.Controllers
         [Authorize]
         public async Task<ActionResult<Post>> CreatePost(Post post)
         {
+            if (string.IsNullOrWhiteSpace(post.Title) || string.IsNullOrWhiteSpace(post.Content))
+            {
+                return BadRequest("Title and Content are required.");
+            }
+
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
             post.UserId = userId;
 
@@ -46,7 +51,9 @@ namespace BloggingPlatform.Controllers
             var post = await _context.Posts.Include(p => p.User).FirstOrDefaultAsync(p => p.Id == id);
 
             if (post == null)
+            {
                 return NotFound();
+            }
 
             return post;
         }
@@ -57,12 +64,26 @@ namespace BloggingPlatform.Controllers
         public async Task<IActionResult> UpdatePost(int id, Post post)
         {
             if (id != post.Id)
-                return BadRequest();
+            {
+                return BadRequest("Post ID mismatch.");
+            }
+
+            if (string.IsNullOrWhiteSpace(post.Title) || string.IsNullOrWhiteSpace(post.Content))
+            {
+                return BadRequest("Title and Content are required.");
+            }
 
             var existingPost = await _context.Posts.FindAsync(id);
 
-            if (existingPost == null || existingPost.UserId != int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!))
+            if (existingPost == null)
+            {
+                return NotFound();
+            }
+
+            if (existingPost.UserId != int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!))
+            {
                 return Unauthorized();
+            }
 
             existingPost.Title = post.Title;
             existingPost.Content = post.Content;
@@ -79,15 +100,18 @@ namespace BloggingPlatform.Controllers
         {
             var post = await _context.Posts.FindAsync(id);
             if (post == null)
+            {
                 return NotFound();
+            }
 
             if (post.UserId != int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!))
+            {
                 return Unauthorized();
+            }
 
             _context.Posts.Remove(post);
             await _context.SaveChangesAsync();
             return NoContent();
         }
     }
-
 }

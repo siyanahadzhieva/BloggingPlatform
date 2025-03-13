@@ -14,6 +14,8 @@ builder.Services.AddCors(options =>
                           .AllowAnyMethod());
 });
 
+builder.Configuration.AddEnvironmentVariables();
+
 // Add database connection
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

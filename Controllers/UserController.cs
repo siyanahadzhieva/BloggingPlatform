@@ -46,13 +46,14 @@ namespace BlogApp.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] User user)
         {
-            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == user.Email);
+            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == user.Email && u.Name == user.Name);
             if (existingUser == null || !BCrypt.Net.BCrypt.Verify(user.PasswordHash, existingUser.PasswordHash))
-                return Unauthorized("Invalid email or password.");
+                return Unauthorized("Invalid email, name, or password.");
 
             var token = GenerateJwtToken(existingUser);
             return Ok(new { token });
         }
+
 
         // ✅ Get Authenticated User Info (Protected)
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]

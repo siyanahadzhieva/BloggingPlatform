@@ -39,14 +39,25 @@ namespace BloggingPlatform.Controllers
 
         // Get all posts
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Post>>> GetPosts()
+        public async Task<ActionResult<IEnumerable<PostDto>>> GetPosts()
         {
-            return await _context.Posts.Include(p => p.User).ToListAsync();
+            var posts = await _context.Posts.Include(p => p.User).ToListAsync();
+            var postDtos = posts.Select(p => new PostDto
+            {
+                Id = p.Id,
+                Title = p.Title,
+                Content = p.Content,
+                CreatedAt = p.CreatedAt,
+                UserId = p.UserId,
+                UserName = p.User.Name
+            }).ToList();
+
+            return Ok(postDtos);
         }
 
         // Get post by ID
         [HttpGet("{id}")]
-        public async Task<ActionResult<Post>> GetPost(int id)
+        public async Task<ActionResult<PostDto>> GetPost(int id)
         {
             var post = await _context.Posts.Include(p => p.User).FirstOrDefaultAsync(p => p.Id == id);
 
@@ -55,7 +66,17 @@ namespace BloggingPlatform.Controllers
                 return NotFound();
             }
 
-            return post;
+            var postDto = new PostDto
+            {
+                Id = post.Id,
+                Title = post.Title,
+                Content = post.Content,
+                CreatedAt = post.CreatedAt,
+                UserId = post.UserId,
+                UserName = post.User.Name
+            };
+
+            return Ok(postDto);
         }
 
         // Update post
@@ -115,3 +136,4 @@ namespace BloggingPlatform.Controllers
         }
     }
 }
+

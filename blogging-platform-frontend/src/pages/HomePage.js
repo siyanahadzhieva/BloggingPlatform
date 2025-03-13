@@ -4,13 +4,33 @@ import Navbar from '../components/Navbar';
 
 const HomePage = () => {
     const [posts, setPosts] = useState([]);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         // Fetch posts
         fetch('http://localhost:5001/api/posts')
-            .then(res => res.json())
-            .then(data => setPosts(data));
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return res.json();
+            })
+            .then(data => {
+                console.log('Response data:', data); // Log the response data
+                if (data.$values && Array.isArray(data.$values)) {
+                    setPosts(data.$values);
+                } else {
+                    setError('Data is not an array');
+                }
+            })
+            .catch(err => {
+                setError(err.message);
+            });
     }, []);
+
+    if (error) {
+        return <div>Error: {error}</div>;
+    }
 
     return (
         <div>

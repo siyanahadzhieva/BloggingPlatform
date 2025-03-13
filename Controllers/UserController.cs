@@ -10,7 +10,7 @@ using BCrypt.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-
+using System.Threading.Tasks;
 
 namespace BlogApp.Controllers
 {
@@ -54,7 +54,6 @@ namespace BlogApp.Controllers
             return Ok(new { token });
         }
 
-
         // ✅ Get Authenticated User Info (Protected)
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [HttpGet("me")]
@@ -65,8 +64,9 @@ namespace BlogApp.Controllers
             if (user == null)
                 return NotFound();
 
-            return Ok(new { user.Id, user.Name, user.Email });
+            return Ok(new { user.Id, user.Name, user.Email, user.ProfilePictureUrl });
         }
+
 
         // ✅ Generate JWT Token
         private string GenerateJwtToken(User user)
@@ -91,6 +91,57 @@ namespace BlogApp.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        // ✅ Update User Info (Protected)
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [HttpPut("update")]
+        public async Task<IActionResult> UpdateUserInfo([FromBody] User updatedUser)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                return NotFound();
+
+            user.Name = updatedUser.Name;
+            user.Email = updatedUser.Email;
+            user.ProfilePictureUrl = updatedUser.ProfilePictureUrl;
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "User info updated successfully!" });
+        }
+
+        // ✅ Update User Profile Picture (Protected)
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [HttpPut("updateProfilePicture")]
+        public async Task<IActionResult> UpdateProfilePicture([FromForm] IFormFile profilePicture)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                return NotFound();
+
+            // Save the profile picture to a location and get the URL
+            var profilePictureUrl = await SaveProfilePictureAsync(profilePicture);
+            user.ProfilePictureUrl = profilePictureUrl;
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Profile picture updated successfully!", profilePictureUrl });
+        }
+
+        private async Task<string> SaveProfilePictureAsync(IFormFile profilePicture)
+        {
+            // Implement logic to save the profile picture and return the URL
+            // For example, save to wwwroot/images and return the URL
+            var filePath = Path.Combine("wwwroot/images", profilePicture.FileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await profilePicture.CopyToAsync(stream);
+            }
+            return $"/images/{profilePicture.FileName}";
+        }
     }
 }
-

@@ -13,7 +13,9 @@ namespace BlogApp.Models
         public string Email { get; set; }
 
         [Required]
-        public string PasswordHash { get; set; }  // Store hashed passwords
+        public string PasswordHash { get; set; }
+
+        public string? ProfilePictureUrl { get; set; }
 
         public ICollection<Post>? Posts { get; set; }
 
